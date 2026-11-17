@@ -24,7 +24,6 @@ jobs:
       TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/shaikhs_disposable_ci
       APP_URL: http://127.0.0.1:3100
       MAIL_DELIVERY_MODE: local
-      PG_BIN: /usr/lib/postgresql/16/bin
       RAZORPAY_TEST_ENABLED: 'true'
       RAZORPAY_SANDBOX_VERIFIED: 'false'
       RAZORPAY_KEY_ID: rzp_test_fixture
@@ -40,7 +39,15 @@ jobs:
       - run: echo "JWT_SECRET=$(openssl rand -hex 48)" >> "$GITHUB_ENV"
       - run: echo "DEV_MAIL_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
       - run: echo "BACKUP_SIGNING_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
-      - run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
+      - name: Verify PostgreSQL 16 service tools
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          for tool in pg_dump pg_restore psql; do
+            docker exec "$POSTGRES_CONTAINER" "$tool" --version | grep -E '\(PostgreSQL\) 16\.'
+          done
+          echo "PG_TOOL_DOCKER_CONTAINER=$POSTGRES_CONTAINER" >> "$GITHUB_ENV"
       - run: npm ci
       - run: npm run test:ci-config
       - run: npm audit --audit-level=moderate
