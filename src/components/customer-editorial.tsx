@@ -1,0 +1,24 @@
+"use client";
+import Link from 'next/link';
+import Image from 'next/image';
+import {useEffect} from 'react';
+import {ArrowUpRight, MapPin, ShieldCheck, ShoppingBag, Smartphone, UtensilsCrossed} from 'lucide-react';
+
+type KitchenDish={imageUrl?:string|null;restaurantId:string;restaurant?:{name:string}|null;category:string};
+export function KitchenDiscovery({dishes,onSelect,loading}:{dishes:KitchenDish[];onSelect:(id:string|null)=>void;loading:boolean}){
+  const kitchens=[...new Map(dishes.map(d=>[d.restaurantId,d])).values()].slice(0,4);
+  return <section className="shell kitchen-discovery" aria-labelledby="kitchens-heading"><div className="editorial-heading"><div><p className="eyebrow">THE PEOPLE BEHIND YOUR PLATE</p><h2 id="kitchens-heading">A kitchen for <em>every craving.</em></h2><p>Explore kitchens represented on this menu page. Postal availability is checked at checkout.</p></div><button className="outline" type="button" onClick={()=>onSelect(null)}>All kitchens <ArrowUpRight size={16}/></button></div><div className="kitchen-grid" aria-busy={loading}>{!kitchens.length&&(loading?[1,2,3,4].map(n=><div key={n} className="kitchen-placeholder" aria-hidden="true"/>):<p className="kitchen-empty">No kitchens on this menu page. Try another search or select All kitchens.</p>)}{kitchens.map((d,i)=><button className="kitchen-card" type="button" key={d.restaurantId} onClick={()=>onSelect(d.restaurantId)}><span className="kitchen-index">{String(i+1).padStart(2,'0')} / LOCAL KITCHEN</span><span className="kitchen-visual">{d.imageUrl?<Image src={d.imageUrl} alt={`Menu preview from ${d.restaurant?.name??'this kitchen'}`} fill sizes="(max-width: 540px) 45vw, (max-width: 1000px) 45vw, 280px"/>:<UtensilsCrossed size={36} aria-hidden="true"/>}</span><strong>{d.restaurant?.name??'Local kitchen'}</strong><span>{d.category} &amp; more from the current menu</span><span className="kitchen-link">View menu <ArrowUpRight size={17}/></span></button>)}</div></section>;
+}
+export function CustomerEditorial(){
+  useEffect(()=>{
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches||!('IntersectionObserver' in window))return;
+    const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('editorial-arrived');observer.unobserve(entry.target);}}),{threshold:0.15});
+    const elements=document.querySelectorAll('[data-editorial-reveal]');elements.forEach(element=>{element.classList.add('editorial-ready');observer.observe(element);});
+    return()=>observer.disconnect();
+  },[]);
+  return <>
+  <section className="delivery-editorial" aria-labelledby="delivery-heading"><div className="shell"><div className="editorial-heading"><div><p className="eyebrow">GOOD FOOD. LESS FUSS.</p><h2 id="delivery-heading">From their kitchen.<br/><em>To your kind of day.</em></h2></div><p>A thoughtful way to order locally, with clear prices and updates at every step.</p></div><div className="delivery-steps">{[{Icon:ShoppingBag,title:'Find your flavour',text:'Choose a kitchen, explore the menu and make your basket your own.'},{Icon:MapPin,title:'Make it local',text:'Add your address. We check postal coverage, opening hours and delivery fees before you order.'},{Icon:ShieldCheck,title:'Follow every step',text:'Track restaurant and delivery updates in your account. Cash on delivery is available.'}].map(({Icon,title,text},i)=><article key={title}><div><Icon size={23}/><span>0{i+1}</span></div><h3>{title}</h3><p>{text}</p></article>)}</div></div></section>
+  <section className="shell install-editorial" aria-labelledby="install-heading"><div className="install-symbol" data-editorial-reveal><Smartphone size={72} strokeWidth={1}/><span>S</span></div><div><p className="eyebrow">A PLACE ON YOUR HOME SCREEN</p><h2 id="install-heading">Your next meal.<br/><em>One little icon away.</em></h2><p>Add Shaikh’s to your phone’s home screen where supported. Browse online, keep your basket close and reconnect to place an order.</p><details id="install-steps"><summary>How to install on your phone</summary><p><strong>Android Chrome:</strong> Open the browser menu and choose Install app or Add to Home screen.</p><p><strong>iPhone Safari:</strong> Share → Add to Home Screen. Enable Open as Web App if offered, then Add.</p><p>Use a trusted HTTPS connection. Installation and standalone behavior depend on your device; checkout and account actions require internet.</p></details></div></section>
+  <section className="shell partner-invitation"><p className="eyebrow">GREAT FOOD STARTS WITH GREAT PEOPLE</p><h2>Have a kitchen<br/><em>worth discovering?</em></h2><Link className="primary" href="/partner">Partner with Shaikh’s <ArrowUpRight size={18}/></Link><p>Submit your restaurant for review. Build your neighbourhood following.</p></section>
+  </>;
+}

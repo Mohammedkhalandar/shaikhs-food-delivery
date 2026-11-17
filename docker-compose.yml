@@ -1,0 +1,19 @@
+# Legacy local template; not the approved isolated container. Do not run against an existing volume without explicit identity review/approval.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: shaikhs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: shaikhs
+      POSTGRES_USER: shaikhs
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set a unique local password explicitly}"
+    ports: ["127.0.0.1:5433:5432"]
+    volumes: [shaikhs_pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shaikhs -d shaikhs"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  shaikhs_pgdata:

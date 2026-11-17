@@ -1,0 +1,2 @@
+﻿import {prisma} from '@/lib/prisma';
+export async function GET(_req:Request,{params}:{params:Promise<{id:string}>}){const {id}=await params;if(!/^[a-z0-9]{20,40}$/.test(id))return new Response(null,{status:404});const image=await prisma.menuImage.findUnique({where:{id}});if(!image)return new Response(null,{status:404});return new Response(new Uint8Array(image.bytes),{headers:{'Content-Type':'image/webp','Content-Length':String(image.bytes.length),'X-Content-Type-Options':'nosniff','Cache-Control':'public, max-age=31536000, immutable',ETag:`"${image.id}"`}});}

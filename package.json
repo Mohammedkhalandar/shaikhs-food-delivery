@@ -1,0 +1,93 @@
+{
+  "name": "shaikhs-food-platform",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "node scripts/start-production.mjs",
+    "lint": "eslint .",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "db:diagnose": "node scripts/diagnose-database.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test:migration": "node scripts/validate-migration.mjs",
+    "test:e2e": "node scripts/verify-workflow.mjs",
+    "test:checkout-ui": "node scripts/verify-checkout-ui.mjs",
+    "test:release-ui": "node scripts/verify-release-ui.mjs",
+    "test:release-http": "node scripts/verify-release-http.mjs",
+    "test:web-acceptance": "node scripts/verify-web-acceptance.mjs",
+    "test:customer-design": "node scripts/verify-customer-design.mjs",
+    "test:pwa-catalog": "node scripts/verify-pwa-catalog.mjs",
+    "test:performance": "node scripts/verify-performance.mjs",
+    "test:low-network": "node scripts/verify-low-network.mjs",
+    "test:ci-config": "node scripts/verify-ci.mjs",
+    "sandbox:prepare": "tsx scripts/prepare-sandbox-order.ts",
+    "sandbox:provider": "tsx scripts/prepare-sandbox-provider.ts",
+    "test:payments": "node scripts/test-payments.mjs",
+    "test:payments:http": "node scripts/verify-payments-http.mjs",
+    "postinstall": "prisma generate",
+    "test:management": "node scripts/verify-management.mjs",
+    "test:addresses-zones": "node scripts/verify-addresses-zones.mjs",
+    "mail:local": "tsx scripts/local-mail.ts",
+    "test:recovery-notifications": "node scripts/verify-recovery-notifications.mjs",
+    "test:restaurant-finance": "node scripts/verify-restaurant-finance.mjs",
+    "db:backup": "node scripts/backup-database.mjs",
+    "db:restore": "node scripts/restore-database.mjs",
+    "db:preflight": "node scripts/migration-preflight.mjs",
+    "deploy:validate": "node scripts/validate-runtime.mjs",
+    "test:backup-restore": "node scripts/verify-backup-restore.mjs",
+    "test:deployment": "node scripts/verify-deployment.mjs",
+    "test:administration": "node scripts/verify-administration.mjs",
+    "test:inventory": "node scripts/verify-inventory.mjs",
+    "test:cases": "node scripts/verify-cases.mjs",
+    "test:email-verification": "node scripts/verify-email-verification.mjs",
+    "test:commerce": "node scripts/verify-commerce.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "bcryptjs": "^3.0.2",
+    "jose": "^6.1.0",
+    "lucide-react": "^0.468.0",
+    "next": "^15.5.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "sharp": "0.35.5",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.5.6",
+    "prisma": "^6.19.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.12"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.32"
+    },
+    "@prisma/config": {
+      "deepmerge-ts": "8.0.2"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.7"
+    }
+  }
+}

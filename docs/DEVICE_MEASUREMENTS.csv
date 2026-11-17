@@ -1,0 +1,1 @@
+run_id,date_time,device_model,os_version,browser_version,build,network_type,measured_rtt_ms,measured_down_mbps,cpu_or_thermal_state,cache_state,scenario,lcp_ms,inp_ms,cls,measurement_tool,unavailable_reason,evidence_reference,result

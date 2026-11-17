@@ -1,0 +1,2 @@
+﻿import {NextResponse} from 'next/server';import {currentUser} from '@/lib/auth';import {restaurantAccess} from '@/lib/restaurant-access';
+export async function GET(){const access=await restaurantAccess(await currentUser());return access?NextResponse.json({isOwner:access.isOwner,staffRole:access.staffRole,canMenu:access.canMenu,canOrders:access.canOrders,restaurantName:access.restaurant.name},{headers:{'Cache-Control':'no-store'}}):NextResponse.json({error:'Restaurant access required'},{status:403});}

@@ -1,0 +1,10 @@
+﻿import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import { currentUser } from '@/lib/auth';
+import { notificationScope } from '@/lib/notifications';
+import { apiFailure } from '@/lib/api-failure';
+import { HttpError,jsonBody } from '@/lib/http-body';
+const headers={'Cache-Control':'no-store'};
+export async function GET(req:Request){const user=await currentUser();if(!user)return NextResponse.json({error:'Sign in required'},{status:401});try{const scope=await notificationScope(user),url=new URL(req.url);const page=Math.min(1000,Math.max(1,Math.floor(Number(url.searchParams.get('page'))||1)));const result=await prisma.$transaction(async tx=>{const unreadCount=await tx.notification.count({where:{AND:[scope,{readAt:null}]}});if(url.searchParams.get('countOnly')==='1')return {unreadCount};const notifications=await tx.notification.findMany({where:scope,orderBy:[{createdAt:'desc'},{id:'desc'}],skip:(page-1)*20,take:21,select:{id:true,orderId:true,kind:true,title:true,body:true,readAt:true,createdAt:true}});return {unreadCount,notifications:notifications.slice(0,20),nextPage:notifications.length>20?page+1:null};},{isolationLevel:'RepeatableRead'});return NextResponse.json(result,{headers});}catch(error){return apiFailure(error);}}
+export async function PATCH(req:Request){const user=await currentUser();if(!user)return NextResponse.json({error:'Sign in required'},{status:401});try{const p=z.union([z.object({id:z.string().min(1).max(100)}).strict(),z.object({all:z.literal(true)}).strict()]).safeParse(await jsonBody(req));if(!p.success)throw new HttpError(400,'Choose a notification.');const scope=await notificationScope(user),where={AND:[scope,...('id'in p.data?[{id:p.data.id}]:[])]};if('id'in p.data&&!await prisma.notification.findFirst({where,select:{id:true}}))throw new HttpError(404,'Notification not found.');await prisma.notification.updateMany({where:{AND:[where,{readAt:null}]},data:{readAt:new Date()}});return NextResponse.json({ok:true},{headers});}catch(error){return apiFailure(error);}}

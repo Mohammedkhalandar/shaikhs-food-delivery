@@ -1,0 +1,97 @@
+name: Verify application
+on: [push, pull_request]
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: shaikhs_disposable_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['127.0.0.1:5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 5s --health-retries 12
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/shaikhs_disposable_ci
+      TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/shaikhs_disposable_ci
+      APP_URL: http://127.0.0.1:3100
+      MAIL_DELIVERY_MODE: local
+      PG_BIN: /usr/lib/postgresql/16/bin
+      RAZORPAY_TEST_ENABLED: 'true'
+      RAZORPAY_SANDBOX_VERIFIED: 'false'
+      RAZORPAY_KEY_ID: rzp_test_fixture
+      RAZORPAY_KEY_SECRET: fixture-api-secret-never-a-real-credential
+      RAZORPAY_WEBHOOK_SECRET: fixture-webhook-secret-never-a-real-credential
+      TEST_WEBHOOK_SECRET: fixture-webhook-secret-never-a-real-credential
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: echo "JWT_SECRET=$(openssl rand -hex 48)" >> "$GITHUB_ENV"
+      - run: echo "DEV_MAIL_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - run: echo "BACKUP_SIGNING_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - run: sudo apt-get update && sudo apt-get install -y postgresql-client-16
+      - run: npm ci
+      - run: npm run test:ci-config
+      - run: npm audit --audit-level=moderate
+      - run: npm run test:migration
+      - run: npm test
+      - name: Backup and restore disposable data
+        run: npm run test:backup-restore
+        env:
+          BACKUP_EXPECT_DATABASE: shaikhs_disposable_ci
+          RESTORE_ADMIN_URL: postgresql://postgres@127.0.0.1:5432/shaikhs_disposable_ci
+      - run: npm run lint && npm run typecheck && npx prisma validate
+      - run: npm run build
+      - run: npm run test:deployment
+      - run: npx playwright install --with-deps chrome
+      - name: Run local production server and regressions
+        run: |
+          set -euo pipefail
+          node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3100 > /tmp/shaikhs-test.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=false
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:3100/api/health/ready; then ready=true; break; fi
+            sleep 1
+          done
+          if [ "$ready" != true ]; then echo "Database/schema readiness failed"; exit 1; fi
+          npm run test:release-http
+          npm run test:payments:http
+          npm run test:e2e
+          npm run test:management
+          npm run test:addresses-zones
+          npm run test:recovery-notifications
+          npm run test:restaurant-finance
+          npm run test:administration
+          npm run test:inventory
+          npm run test:cases
+          npm run test:email-verification
+          npm run test:commerce
+          npm run test:checkout-ui
+          npm run test:release-ui
+          npm run test:web-acceptance
+          npm run test:customer-design
+          npm run test:pwa-catalog
+          npm run test:low-network
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: regression-artifacts
+          path: |
+            .test-artifacts/**/*.png
+            .test-artifacts/**/results.json
+            .test-artifacts/accessibility.json
+            .test-artifacts/workflow-results.json
+          retention-days: 3
