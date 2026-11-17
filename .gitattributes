@@ -4,3 +4,5 @@
 *.jpeg binary
 *.webp binary
 *.ico binary
+# Applied migration checksums cover exact bytes; never normalize SQL line endings.
+prisma/migrations/**/migration.sql -text whitespace=cr-at-eol

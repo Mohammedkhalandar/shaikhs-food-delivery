@@ -36,9 +36,15 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      - run: echo "JWT_SECRET=$(openssl rand -hex 48)" >> "$GITHUB_ENV"
-      - run: echo "DEV_MAIL_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
-      - run: echo "BACKUP_SIGNING_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Generate masked disposable CI keys
+        run: |
+          set -euo pipefail
+          for spec in JWT_SECRET:48 DEV_MAIL_KEY:32 BACKUP_SIGNING_KEY:32; do
+            name="${spec%:*}"
+            value="$(openssl rand -hex "${spec#*:}")"
+            echo "::add-mask::$value"
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
       - name: Verify PostgreSQL 16 service tools
         env:
           POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
